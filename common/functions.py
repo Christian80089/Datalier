@@ -1,0 +1,179 @@
+from googleapiclient.http import MediaIoBaseDownload
+import io
+import csv
+import re
+from pymongo import MongoClient
+import pandas as pd
+import hashlib
+from datetime import datetime
+
+def normalize_column_names(columns):
+    # Trasforma in lowercase e sostituisce tutto ciò che non è lettera o numero con _
+    normalized = []
+    for col in columns:
+        col = col.lower()
+        col = re.sub(r'[^a-z0-9]+', '_', col)  # sostituisce sequenze non alfanumeriche con _
+        col = col.strip('_')  # rimuove eventuali _ iniziali o finali
+        normalized.append(col)
+    return normalized
+
+
+def read_csv_from_folder(folder_id, drive_service):
+    query = f"'{folder_id}' in parents and mimeType='text/csv'"
+    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get('files', [])
+
+    if not files:
+        raise ValueError(f"No CSV files found in folder ID: {folder_id}")
+
+    dataframes = []
+    for file in files:
+        file_id = file['id']
+        file_name = file['name']
+
+        request = drive_service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+
+        fh.seek(0)
+        sample = fh.read(2048).decode('utf-8', errors='ignore')
+        fh.seek(0)
+
+        sniffer = csv.Sniffer()
+        try:
+            dialect = sniffer.sniff(sample, delimiters=[',', ';'])
+            delimiter = dialect.delimiter
+        except csv.Error:
+            delimiter = ','
+
+        df = pd.read_csv(fh, delimiter=delimiter, on_bad_lines='skip')
+
+        # Normalizzo i nomi delle colonne
+        df.columns = normalize_column_names(df.columns)
+
+        df['source_file'] = file_name
+        dataframes.append(df)
+
+    return pd.concat(dataframes, ignore_index=True)
+
+
+mongo_uri = "mongodb+srv://christian:Christian80089@clusterfree.0b1sfgw.mongodb.net/?retryWrites=true&w=majority&appName=ClusterFree"
+database = "Datalier"
+
+
+def read_mongo_collection(collection_name: str, mongo_uri: str = mongo_uri, database_name: str = database):
+    """
+    Legge tutti i documenti da una collection MongoDB e li restituisce come lista di dizionari.
+
+    :param mongo_uri: URI di connessione MongoDB
+    :param database_name: nome del database
+    :param collection_name: nome della collection
+    :return: lista di documenti (dizionari)
+    """
+    client = MongoClient(mongo_uri)
+    db = client[database_name]
+    collection = db[collection_name]
+    docs = list(collection.find())
+    client.close()
+
+    if not docs:
+        print("La collection è vuota.")
+        pandas_df = pd.DataFrame()
+    else:
+        for doc in docs:
+            if '_id' in doc:
+                doc['_id'] = str(doc['_id'])
+
+        # Converti in pandas DataFrame
+        pandas_df = pd.DataFrame(docs)
+
+    return pandas_df
+
+
+def write_pandas_df_to_mongo(
+        pandas_df,
+        collection_name: str,
+        mongo_uri: str = mongo_uri,
+        database_name: str = database
+):
+    """
+    Scrive i dati di un pandas DataFrame su una collection MongoDB specificata.
+
+    :param pandas_df: DataFrame pandas da salvare
+    :param collection_name: nome della collection Mongo
+    :param mongo_uri: URI MongoDB (default)
+    :param database_name: nome database (default)
+    """
+    client = MongoClient(mongo_uri)
+    db = client[database_name]
+    collection = db[collection_name]
+
+    docs = pandas_df.to_dict(orient='records')
+
+    if docs:
+        result = collection.insert_many(docs)
+        print(f"{len(result.inserted_ids)} documenti inseriti in '{collection_name}'.")
+    else:
+        print("DataFrame vuoto, nessun documento da inserire.")
+
+    client.close()
+
+
+def clear_mongo_collection(
+        collection_name: str,
+        mongo_uri: str = mongo_uri,
+        database_name: str = database
+):
+    client = MongoClient(mongo_uri)
+    db = client[database_name]
+    collection = db[collection_name]
+
+    result = collection.delete_many({})
+    print(f"Cancellati {result.deleted_count} documenti dalla collection '{collection_name}'.")
+
+    client.close()
+
+# Concatena i valori riga per riga e calcola sha256
+def compute_sha256_column(df: pd.DataFrame, columns: list[str], output_col: str = "primary_key") -> pd.DataFrame:
+    """
+    Aggiunge una colonna con hash SHA-256 calcolata dalla concatenazione dei valori delle colonne specificate.
+
+    Args:
+        df (pd.DataFrame): Il DataFrame di input.
+        columns (list[str]): Le colonne da concatenare per calcolare l'hash.
+        output_col (str): Il nome della colonna di output contenente l'hash.
+
+    Returns:
+        pd.DataFrame: Una copia del DataFrame con la colonna hash aggiunta.
+    """
+    df_copy = df.copy()
+
+    df_copy[output_col] = df_copy[columns].astype(str).agg("|".join, axis=1).apply(
+        lambda x: hashlib.sha256(x.encode("utf-8")).hexdigest()
+    )
+
+    return df_copy
+
+def add_script_datetime_column(
+    df: pd.DataFrame,
+    timestamp_col: str = "script_datetime"
+) -> pd.DataFrame:
+    """
+    Aggiunge una colonna con la data e ora correnti per ogni record.
+
+    Args:
+        df (pd.DataFrame): Il DataFrame di input.
+        timestamp_col (str): Il nome della colonna da aggiungere con il timestamp.
+
+    Returns:
+        pd.DataFrame: Una copia del DataFrame con la colonna timestamp aggiunta.
+    """
+    df_copy = df.copy()
+    current_timestamp = datetime.now()
+
+    df_copy[timestamp_col] = current_timestamp
+
+    return df_copy

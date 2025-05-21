@@ -1,8 +1,12 @@
 from oauth2client.service_account import ServiceAccountCredentials
 from googleapiclient.discovery import build
 
+# Dati di Mongo DB
+MONGO_URI = "mongodb+srv://christian:Christian80089@clusterfree.0b1sfgw.mongodb.net/?retryWrites=true&w=majority&appName=ClusterFree"
+MONGO_DATABASE = "Datalier"
+
 # Dati del service account (estratti dal JSON)
-service_account_info = {
+GOOGLE_DRIVE_JSON_CREDENTIALS = {
   "type": "service_account",
   "project_id": "databricks-project-460019",
   "private_key_id": "f1082fa747c99c8c52be1de5a81109a8d87c4e79",
@@ -16,11 +20,11 @@ service_account_info = {
   "universe_domain": "googleapis.com"
 }
 
-scope = [
+GOOGLE_DRIVE_SCOPE = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_DRIVE_JSON_CREDENTIALS, GOOGLE_DRIVE_SCOPE)
 drive_service = build("drive", "v3", credentials=creds)

@@ -1,4 +1,3 @@
-from common.config import *
 from common.functions import *
 from datetime import datetime
 
@@ -8,8 +7,8 @@ def process_bank_transactions(clear_collection: bool = False):
 
     try:
         # === Estrazione ===
-        FOLDER_ID = "1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S"
-        input_df = read_csv_from_folder(FOLDER_ID, drive_service)
+        folder_id = "1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S"
+        input_df = read_csv_from_folder(folder_id, drive_service)
         mongo_df = read_mongo_collection("bank_transactions")
 
         # === Trasformazione ===

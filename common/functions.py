@@ -6,6 +6,7 @@ from pymongo import MongoClient
 import pandas as pd
 import hashlib
 from datetime import datetime
+from common.config import *
 
 def normalize_column_names(columns):
     # Trasforma in lowercase e sostituisce tutto ciò che non è lettera o numero con _
@@ -18,9 +19,9 @@ def normalize_column_names(columns):
     return normalized
 
 
-def read_csv_from_folder(folder_id, drive_service):
+def read_csv_from_folder(folder_id, google_drive_service):
     query = f"'{folder_id}' in parents and mimeType='text/csv'"
-    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+    results = google_drive_service.files().list(q=query, fields="files(id, name)").execute()
     files = results.get('files', [])
 
     if not files:
@@ -59,12 +60,7 @@ def read_csv_from_folder(folder_id, drive_service):
 
     return pd.concat(dataframes, ignore_index=True)
 
-
-mongo_uri = "mongodb+srv://christian:Christian80089@clusterfree.0b1sfgw.mongodb.net/?retryWrites=true&w=majority&appName=ClusterFree"
-database = "Datalier"
-
-
-def read_mongo_collection(collection_name: str, mongo_uri: str = mongo_uri, database_name: str = database):
+def read_mongo_collection(collection_name: str, mongo_uri: str = MONGO_URI, database_name: str = MONGO_DATABASE):
     """
     Legge tutti i documenti da una collection MongoDB e li restituisce come lista di dizionari.
 
@@ -96,8 +92,8 @@ def read_mongo_collection(collection_name: str, mongo_uri: str = mongo_uri, data
 def write_pandas_df_to_mongo(
         pandas_df,
         collection_name: str,
-        mongo_uri: str = mongo_uri,
-        database_name: str = database
+        mongo_uri: str = MONGO_URI,
+        database_name: str = MONGO_DATABASE
 ):
     """
     Scrive i dati di un pandas DataFrame su una collection MongoDB specificata.
@@ -124,8 +120,8 @@ def write_pandas_df_to_mongo(
 
 def clear_mongo_collection(
         collection_name: str,
-        mongo_uri: str = mongo_uri,
-        database_name: str = database
+        mongo_uri: str = MONGO_URI,
+        database_name: str = MONGO_DATABASE
 ):
     client = MongoClient(mongo_uri)
     db = client[database_name]

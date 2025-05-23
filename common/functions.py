@@ -173,3 +173,26 @@ def add_script_datetime_column(
     df_copy[timestamp_col] = current_timestamp
 
     return df_copy
+
+# --- Funzione per formato compatto con lettere (k, M, B) ---
+def format_compact(num):
+    abs_num = abs(num)
+    if abs_num >= 1_000_000_000:
+        return f"{num/1_000_000_000:.1f}B"
+    elif abs_num >= 1_000_000:
+        return f"{num/1_000_000:.1f}M"
+    elif abs_num >= 1_000:
+        return f"{num/1_000:.1f}k"
+    else:
+        return str(num)
+
+def format_number_italian(num, decimals=2):
+    # Formatta con 2 decimali con il separatore inglese (virgola per migliaia e punto per decimali)
+    s = f"{num:,.{decimals}f}"
+    # Sostituisci virgola (separatore migliaia) con temporaneo '#'
+    s = s.replace(",", "#")
+    # Sostituisci punto (decimali) con virgola
+    s = s.replace(".", ",")
+    # Sostituisci temporaneo '#' con punto (separatore migliaia italiano)
+    s = s.replace("#", ".")
+    return s

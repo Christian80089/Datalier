@@ -158,4 +158,4 @@ colx1, colx2 = st.columns(2)
 
 with colx1:
     if st.button("➕ Aggiungi nuovi dati"):
-        st.switch_page("aggiungi_dati.py")
+        st.switch_page("pages/Aggiungi_Dati.py")

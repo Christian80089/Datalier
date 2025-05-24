@@ -1,6 +1,4 @@
-import streamlit as st
-import subprocess
-import os
+from backend.salary.ing_bank import process_bank_transactions
 from common.functions import *
 from common.config import *
 
@@ -57,8 +55,24 @@ if modo == "Carica CSV":
                             folder_id="1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S",
                             google_drive_service=drive_service
                         )
-                        subprocess.run(["python", os.path.join("backend", "backend_main.py")])
-                        st.success(f"Dati salvati su Drive come '{result['file_name']}' e backend completato.")
+                        st.success(f"Dati salvati su Drive come '{result['file_name']}'")
+
+                        # Aspetta che il file sia visibile su Drive
+                        file_ready = wait_for_file_on_drive(
+                            google_drive_service=drive_service,
+                            folder_id="1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S",
+                            file_name=result['file_name'],
+                            timeout=30,
+                            poll_interval=3
+                        )
+
+                        if not file_ready:
+                            st.error("Timeout: il file non è ancora disponibile su Google Drive.")
+                        else:
+                            if config_cat['drive_path'] == "bank_transactions":
+                                process_bank_transactions(clear_collection=True)
+                            st.success("Backend completato.")
+
                     except Exception as e:
                         st.error(f"Errore durante il salvataggio o l'elaborazione: {e}")
         else:
@@ -94,5 +108,4 @@ else:
         if st.button("Salva tutte le righe ed Esegui Backend"):
             with st.spinner("Salvataggio in corso e avvio backend..."):
                 # save_to_drive_append_or_create(df_manual, nome_file, config_cat['drive_path'])
-                subprocess.run(["python", "backend_main.py"])
                 st.success("Dati salvati e backend completato")

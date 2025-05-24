@@ -1,4 +1,5 @@
 from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseUpload
 import io
 import csv
 import re
@@ -59,6 +60,53 @@ def read_csv_from_folder(folder_id, google_drive_service):
         dataframes.append(df)
 
     return pd.concat(dataframes, ignore_index=True)
+
+def save_uploaded_csv_to_drive(uploaded_file, folder_id, google_drive_service):
+    if uploaded_file is None:
+        raise ValueError("Nessun file selezionato")
+
+    # Leggi il contenuto del CSV in un DataFrame
+    content = uploaded_file.read()
+    sample = content[:2048].decode("utf-8", errors="ignore")
+
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=[",", ";"])
+        delimiter = dialect.delimiter
+    except csv.Error:
+        delimiter = ","
+
+    df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, on_bad_lines='skip')
+
+    # Aggiungi timestamp al nome del file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    original_name = uploaded_file.name.rsplit(".", 1)[0]
+    file_name = f"{original_name}_{timestamp}.csv"
+
+    # Scrivi il contenuto del DataFrame in un oggetto BytesIO
+    buffer = io.BytesIO()
+    df.to_csv(buffer, index=False)
+    buffer.seek(0)
+
+    media = MediaIoBaseUpload(buffer, mimetype='text/csv')
+
+    # Carica su Google Drive
+    file_metadata = {
+        "name": file_name,
+        "parents": [folder_id],
+        "mimeType": "text/csv"
+    }
+
+    uploaded = google_drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id, name"
+    ).execute()
+
+    return {
+        "file_id": uploaded["id"],
+        "file_name": uploaded["name"],
+        "dataframe": df
+    }
 
 def read_mongo_collection(collection_name: str, mongo_uri: str = MONGO_URI, database_name: str = MONGO_DATABASE):
     """

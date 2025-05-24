@@ -86,8 +86,8 @@ data_limite = (oggi - pd.DateOffset(months=mesi_da_filtrare)).to_period("M").str
 entrate_stipendio = df[df['causale'].str.contains("stipendio|pensione", case=False, na=False)]
 entrate_trend = entrate_stipendio.groupby('mese')['entrate'].sum().reset_index()
 uscite_trend = df.groupby('mese')['uscite'].sum().reset_index()
-mutuo_trend = df[df['descrizione_operazione'].str.contains("mutuo arancio", case=False, na=False)].groupby('mese')['uscite'].sum().reset_index()
-prestito_trend = df[df['descrizione_operazione'].str.contains("prestito arancio", case=False, na=False)].groupby('mese')['uscite'].sum().reset_index()
+mutuo_trend = df[df['descrizione_operazione'].str.contains("mutuo 70500509750", case=False, na=False)].groupby('mese')['uscite'].sum().reset_index()
+prestito_trend = df[df['descrizione_operazione'].str.contains("prestito 10101482304", case=False, na=False)].groupby('mese')['uscite'].sum().reset_index()
 
 entrate_trend = entrate_trend[entrate_trend['mese'] >= data_limite]
 uscite_trend = uscite_trend[uscite_trend['mese'] >= data_limite]
@@ -106,7 +106,7 @@ fig1 = px.area(
     entrate_trend,
     x='mese',
     y='entrate',
-    title="Entrate: Stipendio/Pensione",
+    title="Entrate: Stipendio",
     markers=True,
     text='text'
 )
@@ -158,4 +158,4 @@ colx1, colx2 = st.columns(2)
 
 with colx1:
     if st.button("➕ Aggiungi nuovi dati"):
-        st.switch_page("aggiungi_dati.py")
+        st.switch_page("pages/Aggiungi_Dati.py")

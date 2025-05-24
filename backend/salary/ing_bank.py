@@ -9,7 +9,7 @@ def process_bank_transactions(clear_collection: bool = False):
         # === Estrazione ===
         folder_id = "1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S"
         input_df = read_csv_from_folder(folder_id, drive_service)
-        #mongo_df = read_mongo_collection("bank_transactions")
+        mongo_df = read_mongo_collection("bank_transactions")
 
         # === Trasformazione ===
         transform_df = input_df[input_df["causale"].notna()].copy()

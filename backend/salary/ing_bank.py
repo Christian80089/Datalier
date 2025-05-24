@@ -54,3 +54,7 @@ def process_bank_transactions(clear_collection: bool = False):
     except Exception as e:
         end_time = datetime.now()
         print(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] ❌ Errore nel processo ETL: {e}")
+
+if __name__ == "__main__":
+    # Esegui con Python direttamente, utile per test locali
+    process_bank_transactions(clear_collection=True)

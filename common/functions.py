@@ -8,6 +8,7 @@ import pandas as pd
 import hashlib
 from datetime import datetime
 from common.config import *
+import time
 
 def normalize_column_names(columns):
     # Trasforma in lowercase e sostituisce tutto ciò che non è lettera o numero con _
@@ -51,7 +52,8 @@ def read_csv_from_folder(folder_id, google_drive_service):
         except csv.Error:
             delimiter = ','
 
-        df = pd.read_csv(fh, delimiter=delimiter, on_bad_lines='skip')
+        df = pd.read_csv(fh, delimiter=delimiter)
+        # print(file_name)
 
         # Normalizzo i nomi delle colonne
         df.columns = normalize_column_names(df.columns)
@@ -75,6 +77,7 @@ def save_uploaded_csv_to_drive(uploaded_file, folder_id, google_drive_service):
     except csv.Error:
         delimiter = ","
 
+    # print(f"Delimiter rilevato: {delimiter!r}")
     df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, on_bad_lines='skip')
 
     # Aggiungi timestamp al nome del file
@@ -84,7 +87,7 @@ def save_uploaded_csv_to_drive(uploaded_file, folder_id, google_drive_service):
 
     # Scrivi il contenuto del DataFrame in un oggetto BytesIO
     buffer = io.BytesIO()
-    df.to_csv(buffer, index=False)
+    df.to_csv(buffer, index=False, sep=delimiter)
     buffer.seek(0)
 
     media = MediaIoBaseUpload(buffer, mimetype='text/csv')
@@ -107,6 +110,32 @@ def save_uploaded_csv_to_drive(uploaded_file, folder_id, google_drive_service):
         "file_name": uploaded["name"],
         "dataframe": df
     }
+
+def wait_for_file_on_drive(google_drive_service, folder_id, file_name, timeout=30, poll_interval=3):
+    """
+    Attende fino a `timeout` secondi che il file con `file_name`
+    sia disponibile nella cartella Drive `folder_id`.
+    Ritorna True se trovato, False se timeout.
+    """
+    query = f"'{folder_id}' in parents and name = '{file_name}' and trashed = false"
+    elapsed = 0
+
+    while elapsed < timeout:
+        results = google_drive_service.files().list(
+            q=query,
+            spaces='drive',
+            fields="files(id, name)",
+            pageSize=1
+        ).execute()
+
+        files = results.get('files', [])
+        if files:
+            return True  # File trovato
+
+        time.sleep(poll_interval)
+        elapsed += poll_interval
+
+    return False  # Timeout, file non trovato
 
 def read_mongo_collection(collection_name: str, mongo_uri: str = MONGO_URI, database_name: str = MONGO_DATABASE):
     """

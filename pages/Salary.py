@@ -65,22 +65,10 @@ col5.metric("TFR Totale", f"€ {format_number_italian(tfr_totale)}")
 col6.metric("Costo Orario Lordo Medio", f"€ {format_number_italian(costo_orario_lordo)}" if not pd.isna(costo_orario_lordo) else "n.d.")
 
 # Netto Ultimo Mese con delta colorato
-delta_color_mese = "normal" if diff_mensile >= 0 else "inverse"
-col7.metric(
-    f"Netto Ultimo Mese ({mese_ultimo})",
-    f"€ {format_number_italian(ultimo)}",
-    f"€ {format_number_italian(diff_mensile)} ({format_number_italian(perc_diff_mensile)}%)",
-    delta_color=delta_color_mese
-)
+col7.metric(f"Netto Ultimo Mese ({mese_ultimo})", format_number_italian(ultimo) + " €", f"{perc_diff_mensile:+.1f}% ({format_number_italian(diff_mensile)} €)")
 
 # Netto Ultimo Anno con delta colorato
-delta_color_anno = "normal" if diff_annuo >= 0 else "inverse"
-col8.metric(
-    f"Netto Ultimo Anno ({ul_anno})",
-    f"€ {format_number_italian(netto_ul_anno)}",
-    f"€ {format_number_italian(diff_annuo)} ({format_number_italian(perc_diff_annuo)}%)",
-    delta_color=delta_color_anno
-)
+col8.metric(f"Netto Ultimo Anno ({ul_anno})", format_number_italian(netto_ul_anno) + " €", f"{perc_diff_annuo:+.1f}% ({format_number_italian(diff_annuo)} €)")
 
 # --- FILTRO TREND CON EXPANDER ---
 st.subheader("Trend Mensili")

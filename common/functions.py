@@ -1,3 +1,4 @@
+import gspread
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.http import MediaIoBaseUpload
 import io
@@ -20,6 +21,19 @@ def normalize_column_names(columns):
         normalized.append(col)
     return normalized
 
+def read_sheet_from_folder(sheet_id):
+    client = gspread.authorize(creds)
+    spreadsheet = client.open_by_key(sheet_id)
+    file_name = spreadsheet.title
+    sheet = spreadsheet.sheet1
+    records = sheet.get_all_records()
+    df = pd.DataFrame(records)
+    # Normalizzo i nomi delle colonne
+    df.columns = normalize_column_names(df.columns)
+
+    df['source_file'] = file_name
+
+    return df
 
 def read_csv_from_folder(folder_id, google_drive_service):
     query = f"'{folder_id}' in parents and mimeType='text/csv'"

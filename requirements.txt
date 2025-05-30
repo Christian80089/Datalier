@@ -6,3 +6,4 @@ dash-bootstrap-components~=2.0.2
 plotly~=6.1.1
 streamlit~=1.45.1
 protobuf~=6.31.0
+gspread~=6.2.1

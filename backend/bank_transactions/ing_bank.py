@@ -1,15 +1,16 @@
 from common.functions import *
 from datetime import datetime
 
-def process_bank_transactions(clear_collection: bool = False):
+def process_ing_bank_transactions(clear_collection: bool = False):
     start_time = datetime.now()
     print(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] ▶️ Inizio processo ETL")
 
     try:
         # === Estrazione ===
         folder_id = "1bqjFc4Y5X_CXCy6RTpEzlVfK3Pith87S"
+        mongo_collection_name = "bank_transactions"
         input_df = read_csv_from_folder(folder_id, drive_service)
-        mongo_df = read_mongo_collection("bank_transactions")
+        mongo_df = read_mongo_collection(mongo_collection_name)
 
         # === Trasformazione ===
         transform_df = input_df[input_df["causale"].notna()].copy()
@@ -36,15 +37,27 @@ def process_bank_transactions(clear_collection: bool = False):
             .fillna(0)
         )
 
+        transform_df = add_script_datetime_column(transform_df, timestamp_col="script_date_time")
+
+        transform_df = transform_df[[
+            "data_contabile",
+            "data_valuta",
+            "uscite",
+            "entrate",
+            "causale",
+            "descrizione_operazione",
+            "source_file",
+            "script_date_time"
+        ]]
+
         cols_to_concat = [col for col in transform_df.columns if col != "primary_key"]
         transform_df = compute_sha256_column(transform_df, columns=cols_to_concat, output_col="primary_key")
-        transform_df = add_script_datetime_column(transform_df, timestamp_col="script_date_time")
 
         # === Caricamento ===
         if clear_collection:
-            clear_mongo_collection("bank_transactions")
+            clear_mongo_collection(mongo_collection_name)
 
-        write_pandas_df_to_mongo(transform_df, "bank_transactions")
+        write_pandas_df_to_mongo(transform_df, mongo_collection_name)
 
         end_time = datetime.now()
         duration = end_time - start_time
@@ -57,4 +70,4 @@ def process_bank_transactions(clear_collection: bool = False):
 
 if __name__ == "__main__":
     # Esegui con Python direttamente, utile per test locali
-    process_bank_transactions(clear_collection=True)
+    process_ing_bank_transactions(clear_collection=True)

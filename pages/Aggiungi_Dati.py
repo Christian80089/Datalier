@@ -1,4 +1,4 @@
-from backend.salary.ing_bank import process_bank_transactions
+from backend.bank_transactions.ing_bank import process_ing_bank_transactions
 from common.functions import *
 from common.config import *
 
@@ -70,7 +70,7 @@ if modo == "Carica CSV":
                             st.error("Timeout: il file non è ancora disponibile su Google Drive.")
                         else:
                             if config_cat['drive_path'] == "bank_transactions":
-                                process_bank_transactions(clear_collection=True)
+                                process_ing_bank_transactions(clear_collection=True)
                             st.success("Backend completato.")
 
                     except Exception as e:

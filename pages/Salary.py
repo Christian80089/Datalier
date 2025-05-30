@@ -50,6 +50,7 @@ diff_annuo = netto_ul_anno - netto_prev_anno
 perc_diff_annuo = (diff_annuo / netto_prev_anno * 100) if netto_prev_anno != 0 else 0
 
 # Layout Streamlit
+st.set_page_config(page_title="Salary", layout="wide")
 st.title("\U0001F4CA Dashboard Buste Paga")
 
 # Card metriche su 2 righe (4 + 4)

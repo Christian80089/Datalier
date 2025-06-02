@@ -73,4 +73,4 @@ def process_ing_bank_transactions(clear_collection: bool = False):
 
 if __name__ == "__main__":
     # Esegui con Python direttamente, utile per test locali
-    process_ing_bank_transactions(clear_collection=True)
+    process_ing_bank_transactions(clear_collection=False)

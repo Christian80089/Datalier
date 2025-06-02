@@ -17,8 +17,6 @@ def process_relatech_salary(clear_collection: bool = False):
 
         transform_df["data_busta_paga"] = pd.to_datetime(transform_df["data_busta_paga"], format="%d/%m/%Y", errors='coerce')
 
-        transform_df = add_script_datetime_column(transform_df, timestamp_col="script_date_time")
-
         transform_df = transform_df[[
             "data_busta_paga",
             "livello_contratto",
@@ -33,12 +31,17 @@ def process_relatech_salary(clear_collection: bool = False):
             "ore_ordinarie",
             "ore_straordinario",
             "straordinario_pagato_lordo",
-            "source_file",
-            "script_date_time"
+            "source_file"
         ]]
 
         cols_to_concat = [col for col in transform_df.columns if col != "primary_key"]
         transform_df = compute_sha256_column(transform_df, columns=cols_to_concat, output_col="primary_key")
+
+        existing_keys = set(mongo_df["primary_key"])
+        transform_df = transform_df[~transform_df["primary_key"].isin(existing_keys)]
+        print(f"📊 Nuovi record da inserire: {len(transform_df)}")
+
+        transform_df = add_script_datetime_column(transform_df, timestamp_col="script_date_time")
 
         # === Caricamento ===
         if clear_collection:
@@ -57,4 +60,4 @@ def process_relatech_salary(clear_collection: bool = False):
 
 if __name__ == "__main__":
     # Esegui con Python direttamente, utile per test locali
-    process_relatech_salary(clear_collection=True)
+    process_relatech_salary(clear_collection=False)

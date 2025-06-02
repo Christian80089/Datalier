@@ -50,18 +50,31 @@ uscite_prec = df_mese_prec['uscite'].sum()
 uscite_delta = uscite_scorso - uscite_prec
 uscite_perc = (uscite_delta / abs(uscite_prec)) * 100 if uscite_prec != 0 else 0
 
+# --- INPUT RISPARMI ---
+with st.expander("💰 Inserisci Risparmi", expanded=False):
+    col_risparmi = st.columns(1)[0]
+    risparmi = col_risparmi.number_input(
+        "Inserisci l'importo dei tuoi risparmi (€):",
+        min_value=0.0,
+        step=100.0,
+        format="%.2f"
+    )
+totale_disponibile = saldo_corrente + risparmi
+
 # --- METRICHE ---
 st.subheader("Panoramica Attuale")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4, col4_1 = st.columns(5)
 col1.metric("Saldo Conto Corrente", format_number_italian(saldo_corrente) + " €")
 col2.metric("Totale Entrate", format_number_italian(tot_entrate) + " €")
 col3.metric("Totale Uscite", format_number_italian(tot_uscite) + " €")
+col4.metric("Risparmi", format_number_italian(risparmi) + " €")
+col4_1.metric("Saldo + Risparmi", format_number_italian(totale_disponibile) + " €")
 
 st.subheader("Panoramica Mese Scorso")
-col4, col5, col6 = st.columns(3)
-col4.metric("Saldo Conto Corrente", format_number_italian(saldo_scorso) + " €", f"{saldo_perc:+.1f}% ({format_number_italian(saldo_delta)} €)")
-col5.metric("Totale Entrate", format_number_italian(entrate_scorso) + " €", f"{entrate_perc:+.1f}% ({format_number_italian(entrate_delta)} €)")
-col6.metric("Totale Uscite", format_number_italian(uscite_scorso) + " €", f"{uscite_perc:+.1f}% ({format_number_italian(uscite_delta)} €)")
+col5, col6, col7 = st.columns(3)
+col5.metric("Saldo Conto Corrente", format_number_italian(saldo_scorso) + " €", f"{saldo_perc:+.1f}% ({format_number_italian(saldo_delta)} €)")
+col6.metric("Totale Entrate", format_number_italian(entrate_scorso) + " €", f"{entrate_perc:+.1f}% ({format_number_italian(entrate_delta)} €)")
+col7.metric("Totale Uscite", format_number_italian(uscite_scorso) + " €", f"{uscite_perc:+.1f}% ({format_number_italian(uscite_delta)} €)")
 
 # --- FILTRO TREND CON EXPANDER ---
 st.subheader("Trend Mensili")
@@ -99,7 +112,7 @@ mutuo_trend["text"] = mutuo_trend["uscite"].apply(format_compact)
 prestito_trend["text"] = prestito_trend["uscite"].apply(format_compact)
 
 # --- TREND CHARTS ---
-col7, col8 = st.columns(2)
+col8, col9 = st.columns(2)
 
 fig1 = px.area(
     entrate_trend,
@@ -111,7 +124,7 @@ fig1 = px.area(
 )
 fig1.update_traces(textposition='top center', line_color='green', fillcolor='rgba(0,128,0,0.2)')
 fig1.update_layout(xaxis_title=None, yaxis_title=None)
-col7.plotly_chart(fig1, use_container_width=True)
+col8.plotly_chart(fig1, use_container_width=True)
 
 fig2 = px.area(
     uscite_trend,
@@ -123,9 +136,9 @@ fig2 = px.area(
 )
 fig2.update_traces(textposition='top center', line_color='red', fillcolor='rgba(255,0,0,0.2)')
 fig2.update_layout(xaxis_title=None, yaxis_title=None)
-col8.plotly_chart(fig2, use_container_width=True)
+col9.plotly_chart(fig2, use_container_width=True)
 
-col9, col10 = st.columns(2)
+col10, col11 = st.columns(2)
 
 fig3 = px.area(
     mutuo_trend,
@@ -137,7 +150,7 @@ fig3 = px.area(
 )
 fig3.update_traces(textposition='top center', line_color='orange', fillcolor='rgba(255,165,0,0.2)')
 fig3.update_layout(xaxis_title=None, yaxis_title=None)
-col9.plotly_chart(fig3, use_container_width=True)
+col10.plotly_chart(fig3, use_container_width=True)
 
 fig4 = px.area(
     prestito_trend,
@@ -149,7 +162,7 @@ fig4 = px.area(
 )
 fig4.update_traces(textposition='top center', line_color='purple', fillcolor='rgba(128,0,128,0.2)')
 fig4.update_layout(xaxis_title=None, yaxis_title=None)
-col10.plotly_chart(fig4, use_container_width=True)
+col11.plotly_chart(fig4, use_container_width=True)
 
 # --- NAVIGAZIONE ---
 st.markdown("---")
